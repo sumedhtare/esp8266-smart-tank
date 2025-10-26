@@ -33,38 +33,43 @@ void setupRoutes() {
   });
 
   // API: save schedules (expects full array, overwrite existing)
-  server.on("/api/schedules", HTTP_POST, [](AsyncWebServerRequest *request){ 
-    // optional: leave empty
-}, nullptr, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
-    // assemble body string
-    String body;
-    
-    for(size_t i=0;i<len;i++) body += (char)data[i];
-    logMsg(body);
-    DynamicJsonDocument doc(16000);
-    DeserializationError err = deserializeJson(doc, body);
-    if(err){
-        request->send(400, "text/plain", "Bad JSON");
-        return;
-    }
+server.on("/api/schedules", HTTP_POST, [](AsyncWebServerRequest *request){},
+    NULL, // no upload
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+        
+       // Append the current chunk to global buffer
+    if(index == 0) scheduleBody = ""; // first chunk, reset
+for (size_t i = 0; i < len; i++) scheduleBody += (char)data[i];
 
-    JsonArray arr = doc.as<JsonArray>();
-    schedules.clear();
-    for(JsonObject obj : arr){
-        ScheduleEntry s;
-        s.deviceId   = obj["deviceId"] | 0;
-        s.hour       = obj["hour"] | 0;
-        s.minute     = obj["minute"] | 0;
-        s.type       = obj["type"] ? String((const char*)obj["type"]) : "on";
-        s.data       = obj["data"] ? String((const char*)obj["data"]) : "";
-        s.brightness = obj["brightness"] | 255;
-        s.enabled    = obj["enabled"] | true;
-        schedules.push_back(s);
-    }
+    // Only process when full body received
+    if(index + len == total){
+          logMsg(scheduleBody);
 
-    saveSchedulesToFS();
-    request->send(200, "text/plain", "saved");
+        DynamicJsonDocument doc(16000); // increase if needed
+        DeserializationError err = deserializeJson(doc, scheduleBody);
+        if(err){
+            request->send(400, "text/plain", "Bad JSON: " + String(err.c_str()));
+            return;
+        }
+
+        JsonArray arr = doc.as<JsonArray>();
+        schedules.clear();
+        for(JsonObject obj : arr){
+            ScheduleEntry s;
+            s.deviceId = obj["deviceId"] | 0;
+            s.hour = obj["hour"] | 0;
+            s.minute = obj["minute"] | 0;
+            s.type = obj["type"] ? String((const char*)obj["type"]) : "on";
+            s.data = obj["data"] ? String((const char*)obj["data"]) : "";
+            s.brightness = obj["brightness"] | 255;
+            s.enabled = obj["enabled"] | true;
+            schedules.push_back(s);
+        }
+        saveSchedulesToFS();
+        request->send(200, "text/plain", "saved");
+    }
 });
+
 
 
   // status endpoint (small)

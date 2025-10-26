@@ -60,6 +60,7 @@ struct ScheduleEntry {
   uint8_t brightness; // used for color (0..255)
   bool enabled;
 };
+String scheduleBody;
 
 std::vector<ScheduleEntry> schedules;
 
