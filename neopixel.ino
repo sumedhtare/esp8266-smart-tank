@@ -21,6 +21,7 @@ struct NeoFade {
 NeoFade neoFade;
 
 void applyNeoPixelColor(uint32_t color, uint8_t brightness, unsigned long fadeDuration = 10000) {
+  lastNeoColor = color;           // store last color
   neoFade.startColor = neoPixel.getPixelColor(0);
   neoFade.targetColor = color;
   neoFade.startBrightness = neoPixel.getBrightness();

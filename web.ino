@@ -85,7 +85,7 @@ for (size_t i = 0; i < len; i++) scheduleBody += (char)data[i];
         JsonObject neo = o.createNestedObject("state");
         char buf[8];
         // For simplicity send last color as #000000 (no tracking); UI reads schedules for current
-        snprintf(buf, sizeof(buf), "#%06X", 0);
+    snprintf(buf, sizeof(buf), "#%06X", lastNeoColor & 0xFFFFFF); // send last color
         neo["color"] = buf;
         neo["brightness"] = neoPixel.getBrightness();
       }
@@ -203,18 +203,28 @@ String htmlMainPage() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SmartTank Manual Control</title>
 <style>
-body{font-family:Arial,sans-serif;padding:12px}
+body{font-family:Arial,sans-serif;padding:12px;margin:0}
 h2{margin-bottom:6px}
 button{padding:8px 12px;margin:2px;border-radius:6px;border:none;background:#007BFF;color:#fff}
-input[type=range]{width:120px}
-table{width:100%;border-collapse:collapse}
+input[type=range]{width:100%}
+table{width:100%;border-collapse:collapse;margin-top:12px}
 th,td{padding:6px;text-align:left;border-bottom:1px solid #ddd}
 .color-preview{display:inline-block;width:20px;height:20px;border-radius:4px;vertical-align:middle;border:1px solid #ccc}
+@media (max-width:600px){
+  table, thead, tbody, th, td, tr{display:block;width:100%}
+  th{background:#f4f4f4;font-weight:bold}
+  td{border:none;border-bottom:1px solid #ddd;position:relative;padding-left:50%}
+  td:before{position:absolute;left:6px;width:45%;white-space:nowrap;font-weight:bold}
+  td:nth-of-type(1):before{content:"Device"}
+  td:nth-of-type(2):before{content:"Control"}
+}
 </style>
 </head>
 <body>
 <h2>Manual Control</h2>
 <p><a href='/'>Back</a> | <a href='/schedule'>Schedules</a></p>
+<p>Device Time: <span id="deviceTime">--</span></p>
+<p>Water Level: <span id="waterLevel">--</span></p>
 
 <table>
 <tr><th>Device</th><th>Control</th></tr>
@@ -264,13 +274,45 @@ th,td{padding:6px;text-align:left;border-bottom:1px solid #ddd}
 <button onclick="step('fwd',200)">Forward 200</button>
 <button onclick="step('back',200)">Backward 200</button>
 <button onclick="step('stop',0)">Stop</button>
+<span id="stepPos">0</span>
 </td></tr>
 </table>
 
 <script>
+async function loadStatus(){
+  try{
+    const res = await fetch('/status');
+    const data = await res.json();
+
+    // Update PWM devices 0-3
+    data.devices.forEach((dev,i)=>{
+      if(i<=3){
+        document.getElementById('val'+i).innerText = dev.state;
+        document.getElementById('slider'+i).value = dev.state;
+      }
+      else if(i==4){ // Stepper
+        document.getElementById('stepPos').innerText = dev.state;
+      }
+      else if(i==5){ // NeoPixel
+        const color = dev.state.color || '#FF0000';
+        const br = dev.state.brightness || 255;
+        document.getElementById('neoColor').value = color;
+        document.getElementById('neoBrightness').value = br;
+        document.getElementById('preview').style.background = color;
+      }
+    });
+
+    // device time
+    if(data.deviceTime) document.getElementById('deviceTime').innerText = data.deviceTime;
+    // water level
+    if(data.waterLevel!==undefined) document.getElementById('waterLevel').innerText = data.waterLevel ? "HIGH" : "LOW";
+
+  }catch(e){console.error(e);}
+}
+
+// Control functions
 function setVal(id,val){
-  fetch('/control?id='+id+'&value='+val,{method:'POST'});
-  fetch('/control', {
+   fetch('/control', {
   method: 'POST',
   headers: {'Content-Type': 'application/x-www-form-urlencoded'},
   body: 'id='+id+'&value='+val
@@ -283,26 +325,33 @@ function setNeo(){
   const color = document.getElementById('neoColor').value;
   const br = document.getElementById('neoBrightness').value;
   fetch('/control', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-  body: 'id=5'+'&color='+color+'&brightness='+br
-});
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'id=5&color='+color+'&brightness='+br
+  });
   document.getElementById('preview').style.background = color;
 }
 
 function step(dir,steps){
-  fetch('/stepper', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-  body: 'dir='+dir+'&steps='+steps
-});
+  fetch('/stepper',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'dir='+dir+'&steps='+steps
+  });
 }
+
+// Load status initially
+window.onload = loadStatus;
+
+// Auto-refresh every 30s
+setInterval(loadStatus,30000);
 </script>
 </body>
 </html>
 )rawliteral";
   return s;
 }
+
 
 // The schedule page: single UI to view/add/edit/delete schedules
 String htmlSchedulePage() {

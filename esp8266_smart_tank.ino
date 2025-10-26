@@ -24,6 +24,7 @@
 
 #define NUMPIXELS 24
 Adafruit_NeoPixel neoPixel(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
+uint32_t lastNeoColor = 0xFF0000; // default red
 
 // === CONFIG ===
 const char* MDNS_NAME = "smarttank";
