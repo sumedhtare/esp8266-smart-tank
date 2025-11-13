@@ -103,7 +103,7 @@ void executeScheduleEntry(const ScheduleEntry &s) {
   } else if (s.type == "stepper") {
     // stepper: data is steps (positive or negative)
     int steps = s.data.toInt();
-    stepper.move(steps);
+    stepper.move(-steps);
     // do not block; stepper.run() will be called in loop
   }
 }

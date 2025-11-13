@@ -103,8 +103,8 @@ void setup() {
   pinMode(WATER_LEVEL_PIN, INPUT);
 
   // Stepper
-  stepper.setMaxSpeed(800);
-  stepper.setAcceleration(400);
+  stepper.setMaxSpeed(500);
+  stepper.setAcceleration(200);
 
   // Load schedules
   loadSchedulesFromFS();

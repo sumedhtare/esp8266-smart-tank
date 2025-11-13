@@ -198,102 +198,192 @@ for (size_t i = 0; i < len; i++) scheduleBody += (char)data[i];
 String htmlMainPage() {
   String s = R"rawliteral(
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SmartTank Manual Control</title>
+<title>🐠 SmartTank Control</title>
 <style>
-body{font-family:Arial,sans-serif;padding:12px;margin:0}
-h2{margin-bottom:6px}
-button{padding:8px 12px;margin:2px;border-radius:6px;border:none;background:#007BFF;color:#fff}
-input[type=range]{width:100%}
-table{width:100%;border-collapse:collapse;margin-top:12px}
-th,td{padding:6px;text-align:left;border-bottom:1px solid #ddd}
-.color-preview{display:inline-block;width:20px;height:20px;border-radius:4px;vertical-align:middle;border:1px solid #ccc}
-@media (max-width:600px){
-  table, thead, tbody, th, td, tr{display:block;width:100%}
-  th{background:#f4f4f4;font-weight:bold}
-  td{border:none;border-bottom:1px solid #ddd;position:relative;padding-left:50%}
-  td:before{position:absolute;left:6px;width:45%;white-space:nowrap;font-weight:bold}
-  td:nth-of-type(1):before{content:"Device"}
-  td:nth-of-type(2):before{content:"Control"}
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f4f6f8;
+  color: #333;
+}
+header {
+  background: linear-gradient(135deg, #007bff, #00b4d8);
+  color: white;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+h2 { margin: 0; font-size: 1.4em; }
+
+main {
+  padding: 16px;
+  max-width: 700px;
+  margin: auto;
+}
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  background: white;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  font-size: 0.95em;
+}
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 14px;
+  padding: 14px;
+}
+.card h3 {
+  margin-top: 0;
+  color: #007bff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .nav a {
+    color: var(--accent);
+    text-decoration: none;
+    margin: 0 8px;
+    font-weight: 500;
+  }
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin: 4px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover { background: #0056b3; }
+input[type=range] {
+  width: 100%;
+  margin-top: 6px;
+}
+.value-label {
+  display: block;
+  text-align: right;
+  color: #666;
+  font-size: 0.85em;
+}
+.color-preview {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  vertical-align: middle;
+  margin-left: 10px;
+  transition: 0.2s;
+}
+footer {
+  text-align: center;
+  font-size: 0.8em;
+  color: #666;
+  margin: 20px 0;
+}
+@media(max-width:600px){
+  .status-bar { flex-direction: column; gap: 6px; }
 }
 </style>
 </head>
+
 <body>
-<h2>Manual Control</h2>
-<p><a href='/'>Back</a> | <a href='/schedule'>Schedules</a></p>
-<p>Device Time: <span id="deviceTime">--</span></p>
-<p>Water Level: <span id="waterLevel">--</span></p>
+<header>
+  <h2>🐠 Smart Fish Tank Control</h2>
+</header>
 
-<table>
-<tr><th>Device</th><th>Control</th></tr>
+<main>
 
-<tr><td>Water Pump</td>
-<td>
-<button onclick="setVal(0,1023)">ON</button>
-<button onclick="setVal(0,0)">OFF</button>
-<input type="range" min="0" max="1023" value="0" id="slider0" oninput="setVal(0,this.value)">
-<span id="val0">0</span>
-</td></tr>
+<div class="nav">
+  <a href="/">🏠 Home</a> |
+  <a href="/schedule">🕒 Schedules</a>
+</div>
 
-<tr><td>Air Pump</td>
-<td>
-<button onclick="setVal(1,1023)">ON</button>
-<button onclick="setVal(1,0)">OFF</button>
-<input type="range" min="0" max="1023" value="0" id="slider1" oninput="setVal(1,this.value)">
-<span id="val1">0</span>
-</td></tr>
+  <div class="status-bar">
+    <div>🕓 <b>Time:</b> <span id="deviceTime">--</span></div>
+    <div>💧 <b>Water:</b> <span id="waterLevel">--</span></div>
+  </div>
 
-<tr><td>LED</td>
-<td>
-<button onclick="setVal(2,1023)">ON</button>
-<button onclick="setVal(2,0)">OFF</button>
-<input type="range" min="0" max="1023" value="0" id="slider2" oninput="setVal(2,this.value)">
-<span id="val2">0</span>
-</td></tr>
+  <div class="card">
+    <h3>💦 Water Pump</h3>
+    <button onclick="setVal(0,1023)">ON</button>
+    <button onclick="setVal(0,0)">OFF</button>
+    <input type="range" min="0" max="1023" id="slider0" oninput="setVal(0,this.value)">
+    <span class="value-label">Value: <span id="val0">0</span></span>
+  </div>
 
-<tr><td>UV</td>
-<td>
-<button onclick="setVal(3,1023)">ON</button>
-<button onclick="setVal(3,0)">OFF</button>
-<input type="range" min="0" max="1023" value="0" id="slider3" oninput="setVal(3,this.value)">
-<span id="val3">0</span>
-</td></tr>
+  <div class="card">
+    <h3>🌬️ Air Pump</h3>
+    <button onclick="setVal(1,1023)">ON</button>
+    <button onclick="setVal(1,0)">OFF</button>
+    <input type="range" min="0" max="1023" id="slider1" oninput="setVal(1,this.value)">
+    <span class="value-label">Value: <span id="val1">0</span></span>
+  </div>
 
-<tr><td>NeoPixel</td>
-<td>
-<input type="color" id="neoColor" value="#FF0000">
-<input type="range" min="0" max="255" value="255" id="neoBrightness">
-<button onclick="setNeo()">Set</button>
-<span class="color-preview" id="preview" style="background:#FF0000"></span>
-</td></tr>
+  <div class="card">
+    <h3>💡 LED Light</h3>
+    <button onclick="setVal(2,1023)">ON</button>
+    <button onclick="setVal(2,0)">OFF</button>
+    <input type="range" min="0" max="1023" id="slider2" oninput="setVal(2,this.value)">
+    <span class="value-label">Brightness: <span id="val2">0</span></span>
+  </div>
 
-<tr><td>Stepper</td>
-<td>
-<button onclick="step('fwd',200)">Forward 200</button>
-<button onclick="step('back',200)">Backward 200</button>
-<button onclick="step('stop',0)">Stop</button>
-<span id="stepPos">0</span>
-</td></tr>
-</table>
+  <div class="card">
+    <h3>🔆 UV Light</h3>
+    <button onclick="setVal(3,1023)">ON</button>
+    <button onclick="setVal(3,0)">OFF</button>
+    <input type="range" min="0" max="1023" id="slider3" oninput="setVal(3,this.value)">
+    <span class="value-label">Value: <span id="val3">0</span></span>
+  </div>
+
+  <div class="card">
+    <h3>🌈 NeoPixel</h3>
+    <input type="color" id="neoColor" value="#FF0000">
+    <input type="range" min="0" max="255" value="255" id="neoBrightness">
+    <button onclick="setNeo()">Set</button>
+    <span class="color-preview" id="preview" style="background:#FF0000"></span>
+  </div>
+
+  <div class="card">
+    <h3>🍽️ Stepper Feeder</h3>
+    <button onclick="step('back',2048)">Feed</button>
+    <button onclick="step('stop',0)">Stop</button>
+    <span class="value-label">Position: <span id="stepPos">0</span></span>
+  </div>
+</main>
+
+<footer>SmartTank © 2025 | Designed with ❤️</footer>
 
 <script>
+// Same JS you already had — no change
 async function loadStatus(){
   try{
     const res = await fetch('/status');
     const data = await res.json();
-
-    // Update PWM devices 0-3
     data.devices.forEach((dev,i)=>{
       if(i<=3){
         document.getElementById('val'+i).innerText = dev.state;
         document.getElementById('slider'+i).value = dev.state;
-      }
-      else if(i==4){ // Stepper
+      } else if(i==4){
         document.getElementById('stepPos').innerText = dev.state;
-      }
-      else if(i==5){ // NeoPixel
+      } else if(i==5){
         const color = dev.state.color || '#FF0000';
         const br = dev.state.brightness || 255;
         document.getElementById('neoColor').value = color;
@@ -301,49 +391,25 @@ async function loadStatus(){
         document.getElementById('preview').style.background = color;
       }
     });
-
-    // device time
     if(data.deviceTime) document.getElementById('deviceTime').innerText = data.deviceTime;
-    // water level
     if(data.waterLevel!==undefined) document.getElementById('waterLevel').innerText = data.waterLevel ? "HIGH" : "LOW";
-
   }catch(e){console.error(e);}
 }
-
-// Control functions
 function setVal(id,val){
-   fetch('/control', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-  body: 'id='+id+'&value='+val
-});
+  fetch('/control',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'id='+id+'&value='+val});
   document.getElementById('val'+id).innerText = val;
-  if(document.getElementById('slider'+id)) document.getElementById('slider'+id).value = val;
+  document.getElementById('slider'+id).value = val;
 }
-
 function setNeo(){
-  const color = document.getElementById('neoColor').value;
-  const br = document.getElementById('neoBrightness').value;
-  fetch('/control', {
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:'id=5&color='+color+'&brightness='+br
-  });
-  document.getElementById('preview').style.background = color;
+  const color=document.getElementById('neoColor').value;
+  const br=document.getElementById('neoBrightness').value;
+  fetch('/control',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'id=5&color='+color+'&brightness='+br});
+  document.getElementById('preview').style.background=color;
 }
-
 function step(dir,steps){
-  fetch('/stepper',{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:'dir='+dir+'&steps='+steps
-  });
+  fetch('/stepper',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'dir='+dir+'&steps='+steps});
 }
-
-// Load status initially
-window.onload = loadStatus;
-
-// Auto-refresh every 30s
+window.onload=loadStatus;
 setInterval(loadStatus,30000);
 </script>
 </body>
