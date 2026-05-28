@@ -25,6 +25,7 @@ bool loadSchedulesFromFS() {
     return false;
   }
   JsonArray arr = doc.as<JsonArray>();
+  bool needsResave = false;
   for (JsonObject o : arr) {
     ScheduleEntry s;
     s.deviceId = o["deviceId"] | 0;
@@ -34,9 +35,23 @@ bool loadSchedulesFromFS() {
     s.data =  o["data"] ? String((const char*)o["data"]) : "";
     s.brightness = o["brightness"] | 255;
     s.enabled = o["enabled"].as<bool>();
+
+    // One-time migration: legacy `value` schedules used 0..PWM_MAX (1023).
+    // New convention is 0..255 mapped at execution time. Rescale anything >255.
+    if (s.type == "value") {
+      int v = s.data.toInt();
+      if (v > 255) {
+        v = map(constrain(v, 0, PWM_MAX), 0, PWM_MAX, 0, 255);
+        s.data = String(v);
+        needsResave = true;
+        Serial.printf("Migrated schedule value -> %d\n", v);
+      }
+    }
+
     schedules.push_back(s);
   }
   Serial.printf("Loaded %u schedules\n", (unsigned)schedules.size());
+  if (needsResave) saveSchedulesToFS();
   return true;
 }
 
@@ -87,10 +102,9 @@ void executeScheduleEntry(const ScheduleEntry &s) {
       analogWrite(devicePins[s.deviceId], 0);
     }
   } else if (s.type == "value") {
-    int val = s.data.toInt();
-    val = constrain(val, 0, PWM_MAX);
+    int val = constrain(s.data.toInt(), 0, 255);
     if (s.deviceId < 4 && devicePins[s.deviceId] >= 0) {
-      deviceStates[s.deviceId] = val;
+      deviceStates[s.deviceId] = map(val, 0, 255, 0, PWM_MAX);
       analogWrite(devicePins[s.deviceId], deviceStates[s.deviceId]);
     }
   } else if (s.type == "color") {

@@ -11,16 +11,16 @@
 #include <Adafruit_NeoPixel.h>
 
 // === HARDWARE PINS (match your original) ===
-#define PUMP1_PIN D1
-#define PUMP2_PIN D2
+#define PUMP1_PIN D2
+#define PUMP2_PIN D1
 #define LED1_PIN  D4
 #define LED2_PIN  D3
 #define WATER_LEVEL_PIN A0
-#define STEPPER_PIN1 D7
+#define STEPPER_PIN1 D5
 #define STEPPER_PIN2 D6
-#define STEPPER_PIN3 D5
-#define STEPPER_PIN4 D0
-#define LED_PIN D8  // NeoPixel data pin
+#define STEPPER_PIN3 D7
+#define STEPPER_PIN4 D8
+#define LED_PIN D0  // NeoPixel data pin
 
 #define NUMPIXELS 24
 Adafruit_NeoPixel neoPixel(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
